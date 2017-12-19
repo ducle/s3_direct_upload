@@ -30,7 +30,8 @@ module S3DirectUpload
           callback_param: "file",
           key_starts_with: @key_starts_with,
           key: key,
-          server_side_encryption: nil
+          server_side_encryption: nil,
+          security_token: options[:security_token]
         )
       end
 
@@ -55,7 +56,8 @@ module S3DirectUpload
           :signature => signature,
           :success_action_status => "201",
           'X-Requested-With' => 'xhr',
-          "x-amz-server-side-encryption" => @options[:server_side_encryption]
+          "x-amz-server-side-encryption" => @options[:server_side_encryption],
+          "x-amz-security-token" => @options[:security_token]
         }.delete_if { |k, v| v.nil? }
       end
 
@@ -78,13 +80,21 @@ module S3DirectUpload
             {bucket: @options[:bucket]},
             {acl: @options[:acl]},
             {success_action_status: "201"}
-          ] + server_side_encryption + (@options[:conditions] || [])
+          ] + server_side_encryption + security_token + (@options[:conditions] || [])
         }
       end
 
       def server_side_encryption
         if @options[:server_side_encryption]
           [ { "x-amz-server-side-encryption" => @options[:server_side_encryption] } ]
+        else
+          []
+        end
+      end
+
+      def security_token
+        if @options[:security_token]
+          [ { "x-amz-security-token" => @options[:security_token] } ]
         else
           []
         end
